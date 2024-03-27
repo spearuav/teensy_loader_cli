@@ -334,13 +334,22 @@ int soft_reboot(void)
 {
 	usb_dev_handle *serial_handle = NULL;
 
+	// devices that are connected via port USB_SERIAL
 	serial_handle = open_usb_device(0x16C0, 0x0483);
 	if (!serial_handle) {
-		char *error = usb_strerror();
-		printf("Error opening USB device: %s\n", error);
-		return 0;
+		// devices that are connected via port USB_DUAL_SERIAL
+		serial_handle = open_usb_device(0x16C0, 0x048B);
+		if (!serial_handle) {
+			// devices that are connected via port USB_TRIPLE_SERIAL
+			serial_handle = open_usb_device(0x16C0, 0x048C);
+			if (!serial_handle) {
+				char *error = usb_strerror();
+				printf("Error opening USB device: %s\n", error);
+				return 0;
+			}
+		}
 	}
-
+	
 	char reboot_command[] = {0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08};
 	int response = usb_control_msg(serial_handle, 0x21, 0x20, 0, 0, reboot_command, sizeof reboot_command, 10000);
 
